@@ -58,8 +58,48 @@ class Map
     result = Array.new
     
     for i in 0..(letters.length - 1)
+      last_letter = nil
+      unless i == 0
+        last_letter = letters[i - 1]
+      end
+      this_letter = letters[i]
+      next_letter = nil
+      unless i == (letters.length - 1)
+        next_letter = letters[i + 1]
+      end
       
-      result << @letters[letters[i]]
+      if last_letter == this_letter    # doubler
+        next
+      end
+      
+      if this_letter == "n" and next_letter =~ /[^aeiou\.]/    # nasal
+        next
+      end
+
+      
+      if this_letter =~ /^[aeiou]$/    # standalone vocal
+        if last_letter == nil or last_letter =~ /[aeiou]/
+          result << "\\Ttelco"
+        end
+      end
+      
+      if this_letter == "s" and next_letter =~ /[aeiou]/    # silme nuquerna
+        result << "\\Tsilmenuquerna"
+      elsif this_letter == "ss" and next_letter =~ /[aeiou]/    # esse nuquerna
+        result << "\\Tessenuquerna"
+      elsif this_letter == "r" and next_letter =~ /[aeiou]/    # romen
+        result << "\\Troomen"
+      else
+        result << @letters[letters[i]]   # normal
+      end
+      
+      if this_letter == next_letter    # doubler
+        result << "\\TTdoubler"
+      end
+      
+      if last_letter == "n" and this_letter =~ /[^aeiou\.]/    # nasal
+        result << "\\TTnasalizer"
+      end
       
     end
     
