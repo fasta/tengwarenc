@@ -1,3 +1,34 @@
+append:
+  - !ruby/object:Condition
+    this: n
+    next: "[^aeiou\.\,]"
+    letter: \TTnasalizer
+insert:
+  - !ruby/object:Condition
+    last: "^$"
+    this: "^[aeiou]$"
+    letter: \Ttelco
+  - !ruby/object:Condition
+    last: "[aeiou]"
+    this: "^[aeiou]$"
+    letter: \Ttelco
+replace:
+  - !ruby/object:Condition
+    this: "^s$"
+    next: "^[aeiou]$"
+    letter: \Tsilmenuquerna
+  - !ruby/object:Condition
+    this: "^ss$"
+    next: "^[aeiou]$"
+    letter: \Tessenuquerna
+  - !ruby/object:Condition
+    this: "^r$"
+    next: "[aeiou]"
+    letter: \Tromen
+  - !ruby/object:Condition
+    last: @@this_letter
+    this: @@last_letter
+    letter: \TTdoubler
 letters:
   tsch: \Tcalma
   sch:  \Taha

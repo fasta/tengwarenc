@@ -5,7 +5,59 @@
 #
 # Kopyleft (K) 2009 - All Rites Reversed 
 
+require "jcode"    # fix 'String.each_char' for ruby 1.8
+
 require "yaml"
+
+class Condition
+  attr_accessor :last, :this, :next
+  attr_accessor :letter
+
+  def resolve(last_letter, this_letter, next_letter)
+    if (@last and @last.include? "@@") or
+       (@this and @this.include? "@@") or
+       (@next and @next.include? "@@")
+      
+      condition = Condition.new
+
+      condition.last = @last
+      if @last and @last.include? "@@"
+        condition.last = eval @last[2..-1], binding
+      end
+      condition.this = @this
+      if @this and @this.include? "@@"
+        condition.this = eval @this[2..-1], binding
+      end
+      condition.next = @next
+      if @next and @next.include? "@@"
+        condition.next = eval @next[2..-1], binding
+      end
+ 
+      return condition
+    else
+      return self
+    end
+  end
+
+  def match?(last_l, this_l, next_l)
+    condition = self.resolve last_l, this_l, next_l
+
+    unless last_l =~ /#{condition.last}/
+      return false
+    end
+
+    unless this_l =~ /#{condition.this}/
+      return false
+    end
+
+    unless next_l =~ /#{condition.next}/
+      return false
+    end
+
+    return true
+  end
+
+end
 
 class Map
   
@@ -14,6 +66,9 @@ class Map
       map = YAML::load(yf)
       
       @letters = map["letters"]
+      @append_rules = map["append"]
+      @insert_rules = map["insert"]
+      @replace_rules = map["replace"]
     end
   end
   
@@ -57,50 +112,56 @@ class Map
   def encode(letters)
     result = Array.new
     
+    append_letter = nil
     for i in 0..(letters.length - 1)
-      last_letter = nil
+      last_letter = ""
       unless i == 0
         last_letter = letters[i - 1]
       end
       this_letter = letters[i]
-      next_letter = nil
+      next_letter = ""
       unless i == (letters.length - 1)
         next_letter = letters[i + 1]
       end
-      
-      if last_letter == this_letter    # doubler
-        next
+
+      append = nil
+      @append_rules.each do |condition|
+        if condition.match? last_letter, this_letter, next_letter
+          append = condition.letter
+          break    # multiple conditions?
+        end
       end
-      
-      if this_letter == "n" and next_letter =~ /[^aeiou\.]/    # nasal
+      # append to next letter
+      if append
+        append_letter = append
         next
       end
 
-      
-      if this_letter =~ /^[aeiou]$/    # standalone vocal
-        if last_letter == nil or last_letter =~ /[aeiou]/
-          result << "\\Ttelco"
+      @insert_rules.each do |condition|
+        if condition.match? last_letter, this_letter, next_letter
+          result << condition.letter
+          break    # multiple conditions?
         end
       end
       
-      if this_letter == "s" and next_letter =~ /[aeiou]/    # silme nuquerna
-        result << "\\Tsilmenuquerna"
-      elsif this_letter == "ss" and next_letter =~ /[aeiou]/    # esse nuquerna
-        result << "\\Tessenuquerna"
-      elsif this_letter == "r" and next_letter =~ /[aeiou]/    # romen
-        result << "\\Troomen"
-      else
+      replace_letter = nil
+      @replace_rules.each do |condition|
+        if condition.match? last_letter, this_letter, next_letter
+          replace_letter = condition.letter
+        end
+      end
+
+      unless replace_letter
         result << @letters[letters[i]]   # normal
+      else
+        result << replace_letter
+        replace_letter = nil
       end
-      
-      if this_letter == next_letter    # doubler
-        result << "\\TTdoubler"
+
+      if append_letter
+        result << append_letter
+        append_letter = nil
       end
-      
-      if last_letter == "n" and this_letter =~ /[^aeiou\.]/    # nasal
-        result << "\\TTnasalizer"
-      end
-      
     end
     
     return result
