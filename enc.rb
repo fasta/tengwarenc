@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-# enc.rb                                                                   [fs]
+# enc.rb                                                                 [fasta]
 #   encode german ascii text into tengwarscript LaTeX directives
 #
 # Kopyleft (K) 2009 - All Rites Reversed 
